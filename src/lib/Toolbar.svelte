@@ -1,7 +1,7 @@
 <script lang="ts">
   import { open } from "@tauri-apps/plugin-dialog";
   import { gallery } from "./gallery.svelte";
-  import type { KindFilter, SortKey } from "./types";
+  import type { GroupKey, KindFilter, SortKey } from "./types";
 
   async function pickFolder() {
     const selected = await open({ directory: true, multiple: false });
@@ -41,8 +41,25 @@
     { value: "size", label: "Size" },
   ];
 
+  const groupOptions: { value: GroupKey; label: string }[] = [
+    { value: "none", label: "No grouping" },
+    { value: "date", label: "Group by date" },
+    { value: "type", label: "Group by type" },
+  ];
+
   function toggleSortDir() {
     gallery.sortDir = gallery.sortDir === "asc" ? "desc" : "asc";
+  }
+
+  function basename(path: string) {
+    return path.split(/[/\\]/).pop() ?? path;
+  }
+
+  let recentValue = $state("");
+  function openRecent() {
+    const entry = gallery.history.find((h) => h.folder === recentValue);
+    recentValue = "";
+    if (entry) gallery.openHistoryEntry(entry);
   }
 </script>
 
@@ -60,6 +77,18 @@
     >
       Open File
     </button>
+    <select
+      class="px-2 py-1.5 rounded-md bg-white/5 text-xs font-medium outline-none focus:ring-1 focus:ring-accent appearance-none cursor-pointer disabled:opacity-40"
+      bind:value={recentValue}
+      onchange={openRecent}
+      disabled={gallery.history.length === 0}
+      title="Recently opened folders"
+    >
+      <option value="" disabled selected>Recent…</option>
+      {#each gallery.history as h (h.folder)}
+        <option value={h.folder}>{basename(h.folder)}</option>
+      {/each}
+    </select>
   </div>
 
   <div class="flex-1 flex items-center gap-2 max-w-md">
@@ -119,6 +148,77 @@
       onclick={() => (gallery.view = "grid")}
     >
       Grid
+    </button>
+  </div>
+
+  <div class="flex items-center gap-1">
+    <select
+      class="px-2 py-1.5 rounded-md bg-white/5 text-xs font-medium outline-none focus:ring-1 focus:ring-accent appearance-none cursor-pointer"
+      bind:value={gallery.groupBy}
+    >
+      {#each groupOptions as g}
+        <option value={g.value}>{g.label}</option>
+      {/each}
+    </select>
+  </div>
+
+  {#if gallery.selectedPaths.size > 0}
+    <div class="flex items-center gap-2 px-2 py-1 rounded-md bg-accent/15 text-xs text-accent">
+      {gallery.selectedPaths.size} selected
+      <button
+        class="px-2 py-0.5 rounded bg-red-600/80 text-white hover:brightness-110 transition"
+        onclick={() => gallery.requestDelete()}
+      >
+        Delete
+      </button>
+      <button
+        class="px-2 py-0.5 rounded bg-white/10 hover:bg-white/20 transition"
+        onclick={() => gallery.clearSelection()}
+      >
+        Clear
+      </button>
+    </div>
+  {/if}
+
+  <div class="flex items-center gap-1">
+    <button
+      class="px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-white/10 text-xs font-medium transition disabled:opacity-40"
+      onclick={() => gallery.undo()}
+      disabled={gallery.undoStack.length === 0}
+      title="Undo last delete"
+    >
+      Undo{#if gallery.undoStack.length > 0}<span class="text-white/40"> ({gallery.undoStack.length})</span>{/if}
+    </button>
+    <button
+      class="px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-white/10 text-xs font-medium transition"
+      onclick={() => gallery.copyCurrentPath()}
+      disabled={!gallery.current}
+      title="Copy path of current file"
+    >
+      Copy Path
+    </button>
+    <button
+      class="px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-white/10 text-xs font-medium transition disabled:opacity-40"
+      onclick={() => gallery.findDuplicates()}
+      disabled={!gallery.folder || gallery.findingDuplicates}
+      title="Find duplicate files in this folder"
+    >
+      {gallery.findingDuplicates ? "Scanning…" : "Find Duplicates"}
+    </button>
+    <button
+      class="px-2.5 py-1.5 rounded-md bg-white/5 hover:bg-white/10 text-xs font-medium transition"
+      onclick={() => gallery.requestClearCache()}
+      title="Forget recent folders and purge trashed files"
+    >
+      Clear History &amp; Cache
+    </button>
+    <button
+      class="w-7 h-7 rounded-md bg-white/5 hover:bg-white/10 text-xs flex items-center justify-center transition"
+      onclick={() => (gallery.showHelp = true)}
+      title="Keyboard shortcuts"
+      aria-label="Help"
+    >
+      ?
     </button>
   </div>
 
