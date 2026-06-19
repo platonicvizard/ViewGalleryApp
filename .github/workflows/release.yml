@@ -66,6 +66,7 @@ jobs:
           APPLE_ID_SECRET: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD_SECRET: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID_SECRET: ${{ secrets.APPLE_TEAM_ID }}
+        shell: bash
         run: |
           if [ -n "$APPLE_CERTIFICATE_SECRET" ]; then
             {
@@ -84,6 +85,7 @@ jobs:
         env:
           TAURI_SIGNING_PRIVATE_KEY_SECRET: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD_SECRET: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        shell: bash
         run: |
           if [ -n "$TAURI_SIGNING_PRIVATE_KEY_SECRET" ]; then
             {
