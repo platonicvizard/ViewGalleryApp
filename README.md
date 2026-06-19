@@ -33,6 +33,18 @@ npm run tauri dev
 
 This starts the Vite dev server and launches the native app window with hot reload.
 
+### Running for a specific target
+
+Like building, Tauri cannot run a dev build for an OS other than the one you're on — each command below must be run on a machine running that OS:
+
+| Command | Runs on | Notes |
+| --- | --- | --- |
+| `npm run dev:mac` | macOS | uses whatever architecture the current Mac is, no extra setup needed |
+| `npm run dev:mac:arm` | macOS (Apple Silicon) | requires `aarch64-apple-darwin` Rust target |
+| `npm run dev:mac:intel` | macOS (Intel) | requires `x86_64-apple-darwin` Rust target |
+| `npm run dev:windows` | Windows | |
+| `npm run dev:linux` | Linux | |
+
 ## Building from source
 
 ```bash
@@ -41,9 +53,41 @@ npm run tauri build
 
 Produces a native installer/bundle for the current OS (`.app`/`.dmg` on macOS, `.msi`/`.exe` on Windows, `.deb`/`.AppImage` on Linux) in `src-tauri/target/release/bundle/`.
 
+### Building for a specific target
+
+Tauri does not cross-compile desktop builds between operating systems — each command below must be run on a machine running that OS (this is exactly what the `Release` workflow's build matrix does across macOS, Windows, and Linux runners):
+
+| Command | Builds | Run on |
+| --- | --- | --- |
+| `npm run build:mac` | macOS universal binary (Intel + Apple Silicon) | macOS |
+| `npm run build:mac:arm` | macOS, Apple Silicon only | macOS |
+| `npm run build:mac:intel` | macOS, Intel only | macOS |
+| `npm run build:windows` | Windows `.msi`/`.exe` | Windows |
+| `npm run build:linux` | Linux `.deb`/`.AppImage` | Linux |
+| `npm run build:all` | mac, then Windows, then Linux, in sequence | only fully succeeds on a machine with all three toolchains installed |
+
+There are two different reasons a target might not build locally, and only one of them has a quick fix:
+
+- **macOS Intel ⟷ Apple Silicon** — both architectures use the same OS and linker, so this is just a missing Rust target. Install both with:
+  ```bash
+  rustup target add aarch64-apple-darwin x86_64-apple-darwin
+  ```
+  After that, `build:mac`, `build:mac:arm`, and `build:mac:intel` all work on either kind of Mac.
+- **Windows or Linux builds attempted from macOS (or vice versa)** — this is a hard cross-compilation limitation, not a missing target. Tauri links against OS-native webview bindings (WebView2 on Windows, WebKitGTK on Linux), which requires that OS's SDK and linker. Running `rustup target add x86_64-pc-windows-msvc` on a Mac will get further but then fail at the link step — it cannot produce a working Windows or Linux build. `npm run build:all` will therefore always fail past the macOS step when run on a Mac (and likewise on Windows/Linux machines for the other two platforms). To get an installer for an OS you're not currently on, either build on a machine running that OS directly, or push a version tag and let the [Release workflow](#releasing-a-new-version) build each platform on its native runner.
+
 ## Releasing a new version
 
 Pushing a `v*` tag triggers [`.github/workflows/release.yml`](.github/workflows/release.yml), which builds installers for macOS (universal), Windows, and Linux and publishes them as a public GitHub Release with the installers attached.
+
+The quickest way to do this is the combined release script, which bumps the version, syncs it everywhere, commits, tags, and pushes in one step:
+
+```bash
+npm run release:patch   # 0.1.0 -> 0.1.1
+npm run release:minor   # 0.1.0 -> 0.2.0
+npm run release:major   # 0.1.0 -> 1.0.0
+```
+
+This is equivalent to running the steps manually:
 
 1. Bump the version and sync it across `package.json`, `src-tauri/tauri.conf.json`, and `src-tauri/Cargo.toml`:
    ```bash
@@ -54,7 +98,8 @@ Pushing a `v*` tag triggers [`.github/workflows/release.yml`](.github/workflows/
    ```bash
    git push --follow-tags
    ```
-3. Open the **Actions** tab on GitHub and watch the `Release` workflow run. When it finishes, the new version appears on the **Releases** page with installers for all three platforms attached.
+
+Either way, finish by opening the **Actions** tab on GitHub and watching the `Release` workflow run. When it finishes, the new version appears on the **Releases** page with installers for all three platforms attached.
 
 Code-signing and notarization credentials are not part of this repository and are entirely optional. Without them, the workflow still builds and publishes working but *unsigned* installers (see the warnings mentioned in **Installing** above). The next section walks through adding them.
 

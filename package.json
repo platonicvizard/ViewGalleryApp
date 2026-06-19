@@ -10,7 +10,22 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "tauri": "tauri",
-    "version": "node scripts/sync-version.mjs && git add src-tauri/tauri.conf.json src-tauri/Cargo.toml"
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build",
+    "build:mac": "tauri build --target universal-apple-darwin",
+    "build:mac:arm": "tauri build --target aarch64-apple-darwin",
+    "build:mac:intel": "tauri build --target x86_64-apple-darwin",
+    "build:windows": "tauri build --target x86_64-pc-windows-msvc",
+    "build:linux": "tauri build --target x86_64-unknown-linux-gnu",
+    "dev:mac": "tauri dev",
+    "dev:mac:arm": "tauri dev --target aarch64-apple-darwin",
+    "dev:mac:intel": "tauri dev --target x86_64-apple-darwin",
+    "dev:windows": "tauri dev --target x86_64-pc-windows-msvc",
+    "dev:linux": "tauri dev --target x86_64-unknown-linux-gnu",
+    "version": "node scripts/sync-version.mjs && git add src-tauri/tauri.conf.json src-tauri/Cargo.toml",
+    "release:patch": "npm version patch && git push --follow-tags",
+    "release:minor": "npm version minor && git push --follow-tags",
+    "release:major": "npm version major && git push --follow-tags"
   },
   "license": "MIT",
   "dependencies": {
