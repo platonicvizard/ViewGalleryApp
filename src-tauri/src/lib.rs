@@ -188,6 +188,9 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|app, event| {
+            let _ = (&app, &event);
+            // `RunEvent::Opened` (Finder/Dock "Open With") only exists on macOS/iOS.
+            #[cfg(any(target_os = "macos", target_os = "ios"))]
             if let tauri::RunEvent::Opened { urls } = event {
                 if let Some(path) = urls.iter().find_map(|u| url_to_path(u.as_str())) {
                     deliver_path(app, path);
