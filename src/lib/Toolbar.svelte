@@ -1,7 +1,7 @@
 <script lang="ts">
   import { open } from "@tauri-apps/plugin-dialog";
   import { gallery } from "./gallery.svelte";
-  import type { KindFilter } from "./types";
+  import type { KindFilter, SortKey } from "./types";
 
   async function pickFolder() {
     const selected = await open({ directory: true, multiple: false });
@@ -34,6 +34,16 @@
     { value: "image", label: "Images" },
     { value: "video", label: "Videos" },
   ];
+
+  const sortOptions: { value: SortKey; label: string }[] = [
+    { value: "name", label: "Name" },
+    { value: "date", label: "Date" },
+    { value: "size", label: "Size" },
+  ];
+
+  function toggleSortDir() {
+    gallery.sortDir = gallery.sortDir === "asc" ? "desc" : "asc";
+  }
 </script>
 
 <div class="flex items-center gap-3 px-4 py-2.5 bg-surface/80 border-b border-white/5 backdrop-blur">
@@ -59,6 +69,25 @@
       class="w-full px-3 py-1.5 rounded-md bg-white/5 text-sm placeholder:text-white/35 outline-none focus:ring-1 focus:ring-accent"
       bind:value={gallery.searchText}
     />
+  </div>
+
+  <div class="flex items-center gap-1">
+    <select
+      class="px-2 py-1.5 rounded-md bg-white/5 text-xs font-medium outline-none focus:ring-1 focus:ring-accent appearance-none cursor-pointer"
+      bind:value={gallery.sortKey}
+    >
+      {#each sortOptions as s}
+        <option value={s.value}>Sort: {s.label}</option>
+      {/each}
+    </select>
+    <button
+      class="w-7 h-7 rounded-md bg-white/5 hover:bg-white/10 text-xs flex items-center justify-center transition"
+      onclick={toggleSortDir}
+      title={gallery.sortDir === "asc" ? "Ascending" : "Descending"}
+      aria-label="Toggle sort direction"
+    >
+      {gallery.sortDir === "asc" ? "↑" : "↓"}
+    </button>
   </div>
 
   <div class="flex items-center gap-1 bg-white/5 rounded-md p-0.5">

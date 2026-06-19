@@ -10,3 +10,6 @@ export interface MediaEntry {
 }
 
 export type KindFilter = "all" | MediaKind;
+
+export type SortKey = "name" | "date" | "size";
+export type SortDir = "asc" | "desc";

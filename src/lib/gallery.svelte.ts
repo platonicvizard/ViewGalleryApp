@@ -1,11 +1,15 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { KindFilter, MediaEntry } from "./types";
+import type { KindFilter, MediaEntry, SortDir, SortKey } from "./types";
+
+const nameCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
 
 class GalleryStore {
   folder = $state<string | null>(null);
   allItems = $state<MediaEntry[]>([]);
   searchText = $state("");
   kindFilter = $state<KindFilter>("all");
+  sortKey = $state<SortKey>("name");
+  sortDir = $state<SortDir>("asc");
   currentPath = $state<string | null>(null);
   view = $state<"viewer" | "grid">("viewer");
   loading = $state(false);
@@ -13,10 +17,20 @@ class GalleryStore {
 
   filteredItems = $derived.by(() => {
     const q = this.searchText.trim().toLowerCase();
-    return this.allItems.filter((item) => {
+    const filtered = this.allItems.filter((item) => {
       if (this.kindFilter !== "all" && item.kind !== this.kindFilter) return false;
       if (q && !item.name.toLowerCase().includes(q)) return false;
       return true;
+    });
+
+    const dir = this.sortDir === "asc" ? 1 : -1;
+    const key = this.sortKey;
+    return filtered.slice().sort((a, b) => {
+      let cmp = 0;
+      if (key === "name") cmp = nameCollator.compare(a.name, b.name);
+      else if (key === "date") cmp = a.modified - b.modified;
+      else cmp = a.size - b.size;
+      return cmp * dir;
     });
   });
 
