@@ -24,7 +24,9 @@
       "csp": null,
       "assetProtocol": {
         "enable": true,
-        "scope": ["**"]
+        "scope": [
+          "**"
+        ]
       }
     }
   },
@@ -41,9 +43,28 @@
     "fileAssociations": [
       {
         "ext": [
-          "jpg", "jpeg", "png", "gif", "webp", "bmp", "tiff", "tif",
-          "avif", "heic", "heif", "svg",
-          "mp4", "mov", "webm", "mkv", "avi", "m4v", "wmv", "flv", "mpg", "mpeg"
+          "jpg",
+          "jpeg",
+          "png",
+          "gif",
+          "webp",
+          "bmp",
+          "tiff",
+          "tif",
+          "avif",
+          "heic",
+          "heif",
+          "svg",
+          "mp4",
+          "mov",
+          "webm",
+          "mkv",
+          "avi",
+          "m4v",
+          "wmv",
+          "flv",
+          "mpg",
+          "mpeg"
         ],
         "name": "Media File",
         "description": "Image or video viewable in ViewGallery",
