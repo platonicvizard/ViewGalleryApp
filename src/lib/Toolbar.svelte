@@ -63,7 +63,9 @@
   }
 </script>
 
-<div class="flex items-center gap-3 px-4 py-2.5 bg-surface/80 border-b border-white/5 backdrop-blur">
+<div
+  class="flex flex-wrap items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 sm:py-2.5 bg-surface/80 border-b border-white/5 backdrop-blur"
+>
   <div class="flex items-center gap-2">
     <button
       class="px-3 py-1.5 rounded-md bg-accent text-white text-sm font-medium hover:brightness-110 transition"
@@ -91,7 +93,7 @@
     </select>
   </div>
 
-  <div class="flex-1 flex items-center gap-2 max-w-md">
+  <div class="flex-1 flex items-center gap-2 min-w-[120px] max-w-md">
     <input
       type="text"
       placeholder="Filter by name…"
@@ -131,6 +133,17 @@
       </button>
     {/each}
   </div>
+
+  <button
+    class="w-7 h-7 rounded-md text-sm flex items-center justify-center transition {gallery.favoritesOnly
+      ? 'bg-yellow-400/20 text-yellow-400'
+      : 'bg-white/5 text-white/60 hover:text-white'}"
+    onclick={() => (gallery.favoritesOnly = !gallery.favoritesOnly)}
+    title="Show favorites only"
+    aria-label="Show favorites only"
+  >
+    {gallery.favoritesOnly ? "★" : "☆"}
+  </button>
 
   <div class="flex items-center gap-1 bg-white/5 rounded-md p-0.5">
     <button

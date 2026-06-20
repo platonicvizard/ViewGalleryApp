@@ -7,6 +7,7 @@
   import Viewer from "$lib/Viewer.svelte";
   import Filmstrip from "$lib/Filmstrip.svelte";
   import Grid from "$lib/Grid.svelte";
+  import SelectionTray from "$lib/SelectionTray.svelte";
   import ConfirmDialog from "$lib/ConfirmDialog.svelte";
   import HelpModal from "$lib/HelpModal.svelte";
   import DuplicatesModal from "$lib/DuplicatesModal.svelte";
@@ -63,6 +64,16 @@
     if (e.key === "Delete" || e.key === "Backspace") {
       e.preventDefault();
       gallery.requestDelete();
+      return;
+    }
+    if (e.code === "Space") {
+      e.preventDefault();
+      gallery.addCurrentToSelection();
+      return;
+    }
+    if (e.key.toLowerCase() === "f") {
+      e.preventDefault();
+      gallery.toggleFavorite();
       return;
     }
     if (e.key === "ArrowUp") {
@@ -160,6 +171,8 @@
   {:else}
     <Grid />
   {/if}
+
+  <SelectionTray />
 </main>
 
 {#if gallery.pendingDelete}

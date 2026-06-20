@@ -13,11 +13,22 @@ import type {
 
 const nameCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
 const SKIP_DELETE_CONFIRM_KEY = "viewgallery:skipDeleteConfirm";
+const FAVORITES_KEY = "viewgallery:favorites";
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 5;
 const ZOOM_STEP = 0.25;
 const HISTORY_DEBOUNCE_MS = 400;
 const MAX_UNDO_BATCHES = 10;
+
+function loadFavorites(): Set<string> {
+  if (typeof localStorage === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(FAVORITES_KEY);
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch {
+    return new Set();
+  }
+}
 
 class GalleryStore {
   folder = $state<string | null>(null);
@@ -44,6 +55,8 @@ class GalleryStore {
   showDuplicates = $state(false);
   findingDuplicates = $state(false);
   siblingFolders = $state<string[]>([]);
+  favorites = $state<Set<string>>(loadFavorites());
+  favoritesOnly = $state(false);
 
   history = $state<HistoryEntry[]>([]);
   undoStack = $state<TrashEntry[][]>([]);
@@ -54,6 +67,7 @@ class GalleryStore {
     const q = this.searchText.trim().toLowerCase();
     const filtered = this.allItems.filter((item) => {
       if (this.kindFilter !== "all" && item.kind !== this.kindFilter) return false;
+      if (this.favoritesOnly && !this.favorites.has(item.path)) return false;
       if (q && !item.name.toLowerCase().includes(q)) return false;
       return true;
     });
@@ -250,6 +264,22 @@ class GalleryStore {
     this.selectionAnchor = path;
   }
 
+  /** Adds the current item to the selection tray (Space key). */
+  addCurrentToSelection() {
+    if (!this.currentPath || this.selectedPaths.has(this.currentPath)) return;
+    const next = new Set(this.selectedPaths);
+    next.add(this.currentPath);
+    this.selectedPaths = next;
+    this.selectionAnchor = this.currentPath;
+  }
+
+  removeFromSelection(path: string) {
+    if (!this.selectedPaths.has(path)) return;
+    const next = new Set(this.selectedPaths);
+    next.delete(path);
+    this.selectedPaths = next;
+  }
+
   selectRange(path: string) {
     const items = this.filteredItems;
     const anchor = this.selectionAnchor ?? this.currentPath ?? path;
@@ -263,6 +293,26 @@ class GalleryStore {
     const next = new Set(this.selectedPaths);
     for (let i = lo; i <= hi; i++) next.add(items[i].path);
     this.selectedPaths = next;
+  }
+
+  private saveFavorites() {
+    if (typeof localStorage === "undefined") return;
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify([...this.favorites]));
+  }
+
+  isFavorite(path: string) {
+    return this.favorites.has(path);
+  }
+
+  /** Toggles favorite status for the given path, or the current item if omitted. */
+  toggleFavorite(path?: string) {
+    const target = path ?? this.currentPath;
+    if (!target) return;
+    const next = new Set(this.favorites);
+    if (next.has(target)) next.delete(target);
+    else next.add(target);
+    this.favorites = next;
+    this.saveFavorites();
   }
 
   async copyCurrentPath() {
@@ -301,13 +351,42 @@ class GalleryStore {
       const batch = await invoke<TrashEntry[]>("soft_delete", { paths });
       this.undoStack = [...this.undoStack, batch].slice(-MAX_UNDO_BATCHES);
       const removed = new Set(paths);
+      const wasCurrentRemoved = this.currentPath !== null && removed.has(this.currentPath);
+      const prevItems = this.filteredItems;
+      const prevIndex = this.currentIndex;
+
       this.allItems = this.allItems.filter((i) => !removed.has(i.path));
-      if (this.currentPath && removed.has(this.currentPath)) {
-        this.currentPath = this.filteredItems[0]?.path ?? null;
+
+      if (wasCurrentRemoved) {
+        // Prefer the nearest surviving item before the deleted one; fall back to the nearest after.
+        let fallback: string | null = null;
+        for (let i = prevIndex - 1; i >= 0; i--) {
+          if (!removed.has(prevItems[i].path)) {
+            fallback = prevItems[i].path;
+            break;
+          }
+        }
+        if (!fallback) {
+          for (let i = prevIndex + 1; i < prevItems.length; i++) {
+            if (!removed.has(prevItems[i].path)) {
+              fallback = prevItems[i].path;
+              break;
+            }
+          }
+        }
+        this.currentPath = fallback;
       }
+
       const nextSelected = new Set(this.selectedPaths);
       for (const p of paths) nextSelected.delete(p);
       this.selectedPaths = nextSelected;
+
+      if (paths.some((p) => this.favorites.has(p))) {
+        const nextFavorites = new Set(this.favorites);
+        for (const p of paths) nextFavorites.delete(p);
+        this.favorites = nextFavorites;
+        this.saveFavorites();
+      }
     } catch (e) {
       this.error = String(e);
     }

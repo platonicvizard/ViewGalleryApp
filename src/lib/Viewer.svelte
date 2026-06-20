@@ -69,6 +69,18 @@
   {/if}
 
   {#if current}
+    <button
+      class="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/40 hover:bg-black/60 flex items-center justify-center text-lg transition {gallery.isFavorite(
+        current.path,
+      )
+        ? 'text-yellow-400'
+        : 'text-white/70'}"
+      onclick={() => gallery.toggleFavorite(current.path)}
+      title="Toggle favorite (F)"
+      aria-label="Toggle favorite"
+    >
+      {gallery.isFavorite(current.path) ? "★" : "☆"}
+    </button>
     <div
       class="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/40 text-xs text-white/80 max-w-[80%] truncate"
     >

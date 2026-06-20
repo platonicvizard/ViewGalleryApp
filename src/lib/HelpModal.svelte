@@ -7,6 +7,8 @@
     { keys: "+ / -", description: "Zoom in / out" },
     { keys: "0", description: "Reset zoom" },
     { keys: "Esc", description: "Back to grid / close dialog" },
+    { keys: "Space", description: "Add current item to the selection tray" },
+    { keys: "F", description: "Toggle favorite on current item" },
     { keys: "Delete", description: "Move selected file(s) to trash" },
     { keys: "⌘/Ctrl + Z", description: "Undo last delete" },
     { keys: "⌘/Ctrl + A", description: "Select all (grid view)" },
